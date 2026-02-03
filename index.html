@@ -10,6 +10,7 @@
     font-family: Arial, sans-serif;
     background: #0e2a57;
     color: #fff;
+    overflow: hidden;
   }
 
   .container {
@@ -36,11 +37,12 @@
   .board {
     flex: 1;
     padding: 40px;
+    display: flex;
+    flex-direction: column;
   }
 
   .row {
     margin-bottom: 18px;
-    transition: transform 0.6s ease;
   }
 
   .team {
@@ -52,6 +54,7 @@
     font-size: 18px;
     font-weight: bold;
     box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+    transition: all 0.6s ease;
   }
 
   .logo {
@@ -91,22 +94,20 @@
 </div>
 
 <script>
-  const SHEET_ID = "YOUR_SHEET_ID";
-  const SHEET_NAME = "Sheet1";
-  const REFRESH_INTERVAL = 15000; // 15 seconds
+  /************** CONFIG **************/
+  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";   // 🔴 PASTE YOUR SHEET ID
+  const SHEET_NAME = "LEADERBOARD";        // 🔴 EXACT TAB NAME
+  const REFRESH_INTERVAL = 30000;     // 30 seconds
+  /**********************************/
 
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
-
-  let currentData = [];
 
   async function fetchData() {
     const res = await fetch(URL);
     const text = await res.text();
     const json = JSON.parse(text.substring(47).slice(0, -2));
 
-    const rows = json.table.rows;
-
-    return rows.map(r => ({
+    return json.table.rows.map(r => ({
       name: r.c[0]?.v || "",
       lives: r.c[1]?.v || 0,
       color: r.c[2]?.v || "#888",
@@ -118,16 +119,17 @@
     const board = document.getElementById("leaderboard");
 
     data.forEach((team, index) => {
-      let row = document.getElementById(team.name);
+      const safeId = team.name.replace(/\s+/g, "_");
+      let row = document.getElementById(safeId);
 
       if (!row) {
         row = document.createElement("div");
         row.className = "row";
-        row.id = team.name;
+        row.id = safeId;
 
         row.innerHTML = `
           <div class="team">
-            <div class="logo"><img src="${team.logo}"></div>
+            <div class="logo"><img></div>
             <div class="name"></div>
             <div class="lives"></div>
           </div>
@@ -142,20 +144,24 @@
       teamDiv.style.background = team.color;
       row.querySelector(".name").textContent = team.name;
       row.querySelector(".lives").textContent = team.lives + " LIVES IMPACTED";
+      row.querySelector("img").src = team.logo;
     });
   }
 
   async function updateLeaderboard() {
-    const data = await fetchData();
-    data.sort((a, b) => b.lives - a.lives);
-    currentData = data;
-    render(currentData);
+    try {
+      const data = await fetchData();
+      data.sort((a, b) => b.lives - a.lives);
+      render(data);
+    } catch (err) {
+      console.error("Failed to update leaderboard", err);
+    }
   }
 
   // Initial load
   updateLeaderboard();
 
-  // Live refresh (no reload)
+  // Auto-refresh every 30 seconds (NO PAGE RELOAD)
   setInterval(updateLeaderboard, REFRESH_INTERVAL);
 </script>
 
