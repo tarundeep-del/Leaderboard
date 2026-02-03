@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leaderboard</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0e2a57;
+    color: #fff;
+  }
+
+  .container {
+    display: flex;
+    height: 100vh;
+  }
+
+  .sidebar {
+    width: 160px;
+    background: linear-gradient(180deg, #ff7a18, #0e2a57);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar .text {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  .board {
+    flex: 1;
+    padding: 40px;
+  }
+
+  .row {
+    margin-bottom: 20px;
+  }
+
+  .team {
+    padding: 16px 26px;
+    border-radius: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.4s ease;
+  }
+
+  .team:hover {
+    transform: scale(1.02);
+  }
+
+  .lives {
+    font-size: 16px;
+    opacity: 0.95;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="sidebar">
+    <div class="text">
+      LEADERBOARD<br><span style="font-size:14px;">MONTHLY RANKING</span>
+    </div>
+  </div>
+
+  <div class="board" id="leaderboard"></div>
+</div>
+
+<script>
+  // 🔴 REPLACE WITH YOUR GOOGLE SHEET ID
+  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";
+  const SHEET_NAME = "LEADERBOARD";
+
+  const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
+
+  fetch(URL)
+    .then(res => res.text())
+    .then(data => {
+      const json = JSON.parse(data.substring(47).slice(0, -2));
+      const rows = json.table.rows;
+
+      const teams = rows.map(row => ({
+        name: row.c[0].v,
+        lives: row.c[1].v,
+        color: row.c[2].v
+      }));
+
+      // Sort descending (higher lives = higher rank)
+      teams.sort((a, b) => b.lives - a.lives);
+
+      renderLeaderboard(teams);
+    })
+    .catch(err => {
+      document.getElementById("leaderboard").innerHTML =
+        "<p>Error loading data</p>";
+      console.error(err);
+    });
+
+  function renderLeaderboard(teams) {
+    const board = document.getElementById("leaderboard");
+    board.innerHTML = "";
+
+    teams.forEach(team => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      row.innerHTML = `
+        <div class="team" style="background:${team.color}">
+          <span>${team.name}</span>
+          <span class="lives">${team.lives} LIVES IMPACTED</span>
+        </div>
+      `;
+
+      board.appendChild(row);
+    });
+  }
+
+  // 🔁 Auto refresh every 30 seconds (optional)
+  setInterval(() => location.reload(), 30000);
+</script>
+
+</body>
+</html>
