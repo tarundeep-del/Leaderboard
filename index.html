@@ -8,7 +8,7 @@
   body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #0e2a57;
+    background: #1b3067;
     color: #fff;
     overflow: hidden;
   }
@@ -16,8 +16,8 @@
   /* Company Logo */
   .company-logo {
     position: absolute;
-    top: 20px;
-    right: 30px;
+    top: 10px;
+    right: 10px;
     width: 120px;
     z-index: 10;
   }
@@ -32,17 +32,18 @@
   }
 
   .sidebar {
-    width: 160px;
+    width: 200px;
     background: linear-gradient(180deg, #ff7a18, #0e2a57);
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
   }
 
   .sidebar .text {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
-    font-size: 32px;
+    font-size: 28px;
     font-weight: bold;
     letter-spacing: 2px;
   }
@@ -62,7 +63,7 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    padding: 16px 22px;
+    padding: 14px 22px;
     border-radius: 40px;
     font-weight: bold;
     box-shadow: 0 4px 10px rgba(0,0,0,0.35);
@@ -95,7 +96,6 @@
   .stats {
     font-size: 14px;
     opacity: 0.9;
-    margin-top: 4px;
   }
 
   .percent {
@@ -109,12 +109,13 @@
 
 <!-- Company Logo -->
 <div class="company-logo">
-  <img src="logos/company.png" alt="Company Logo">
+  <img src="logos/Company.jpg" alt="Company Logo">
 </div>
 
 <div class="container">
   <div class="sidebar">
     <div class="text">LEADERBOARD</div>
+    <div class="text">Monthly Ranking</div>
   </div>
 
   <div class="board" id="leaderboard"></div>
@@ -122,9 +123,9 @@
 
 <script>
   /************** CONFIG **************/
-  const SHEET_ID = "YOUR_SHEET_ID";
-  const SHEET_NAME = "Sheet1";
-  const REFRESH_INTERVAL = 30000; // 30 seconds
+  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";
+  const SHEET_NAME = "LEADERBOARD";
+  const REFRESH_INTERVAL = 30000; // 30 sec
   /**********************************/
 
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
