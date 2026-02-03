@@ -8,7 +8,7 @@
   body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #1b3067;
+    background: #0e2a57;
     color: #fff;
     overflow: hidden;
   }
@@ -16,15 +16,14 @@
   /* Company Logo */
   .company-logo {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 20px;
+    right: 30px;
     width: 120px;
     z-index: 10;
   }
 
   .company-logo img {
     width: 100%;
-    height: auto;
   }
 
   .container {
@@ -33,7 +32,7 @@
   }
 
   .sidebar {
-    width: 200px;
+    width: 160px;
     background: linear-gradient(180deg, #ff7a18, #0e2a57);
     display: flex;
     align-items: center;
@@ -63,9 +62,8 @@
     display: flex;
     align-items: center;
     gap: 18px;
-    padding: 14px 22px;
+    padding: 16px 22px;
     border-radius: 40px;
-    font-size: 18px;
     font-weight: bold;
     box-shadow: 0 4px 10px rgba(0,0,0,0.35);
     transition: all 0.6s ease;
@@ -86,12 +84,22 @@
     object-fit: cover;
   }
 
-  .name {
+  .details {
     flex: 1;
   }
 
-  .lives {
-    font-size: 16px;
+  .name {
+    font-size: 18px;
+  }
+
+  .stats {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 4px;
+  }
+
+  .percent {
+    font-size: 18px;
     white-space: nowrap;
   }
 </style>
@@ -101,13 +109,12 @@
 
 <!-- Company Logo -->
 <div class="company-logo">
-  <img src="logos/Company.jpg" alt="Company Logo">
+  <img src="logos/company.png" alt="Company Logo">
 </div>
 
 <div class="container">
   <div class="sidebar">
-    <div class="text"><h2>LEADERBOARD</h2></div>
-    <div class="text">Monthly Ranking</div>
+    <div class="text">LEADERBOARD</div>
   </div>
 
   <div class="board" id="leaderboard"></div>
@@ -115,9 +122,9 @@
 
 <script>
   /************** CONFIG **************/
-  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";   // 🔴 Replace with your Sheet ID
-  const SHEET_NAME = "LEADERBOARD";        // 🔴 Must match tab name exactly
-  const REFRESH_INTERVAL = 30000;     // 30 seconds
+  const SHEET_ID = "YOUR_SHEET_ID";
+  const SHEET_NAME = "Sheet1";
+  const REFRESH_INTERVAL = 30000; // 30 seconds
   /**********************************/
 
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
@@ -127,12 +134,19 @@
     const text = await res.text();
     const json = JSON.parse(text.substring(47).slice(0, -2));
 
-    return json.table.rows.map(r => ({
-      name: r.c[0]?.v || "",
-      lives: r.c[1]?.v || 0,
-      color: r.c[2]?.v || "#888",
-      logo: r.c[3]?.v || ""
-    }));
+    return json.table.rows.map(r => {
+      const total = r.c[1]?.v || 0;
+      const target = r.c[2]?.v || 0;
+      const percent = target ? Math.round((total / target) * 100) : 0;
+
+      return {
+        name: r.c[0]?.v || "",
+        total,
+        percent,
+        color: r.c[3]?.v || "#888",
+        logo: r.c[4]?.v || ""
+      };
+    });
   }
 
   function render(data) {
@@ -150,8 +164,11 @@
         row.innerHTML = `
           <div class="team">
             <div class="logo"><img></div>
-            <div class="name"></div>
-            <div class="lives"></div>
+            <div class="details">
+              <div class="name"></div>
+              <div class="stats"></div>
+            </div>
+            <div class="percent"></div>
           </div>
         `;
 
@@ -164,8 +181,11 @@
       teamDiv.style.background = team.color;
 
       row.querySelector(".name").textContent = team.name;
-      row.querySelector(".lives").textContent =
-        team.lives + " LIVES IMPACTED";
+      row.querySelector(".stats").textContent =
+        `${team.total} Lives Impacted`;
+
+      row.querySelector(".percent").textContent =
+        `${team.percent}% Achieved`;
 
       const img = row.querySelector("img");
       img.src = team.logo;
@@ -176,20 +196,16 @@
   async function updateLeaderboard() {
     try {
       const data = await fetchData();
-      data.sort((a, b) => b.lives - a.lives);
+      data.sort((a, b) => b.percent - a.percent); // Rank by achievement %
       render(data);
     } catch (err) {
       console.error("Leaderboard update failed", err);
     }
   }
 
-  // Initial load
   updateLeaderboard();
-
-  // Auto refresh every 30 seconds (NO PAGE RELOAD)
   setInterval(updateLeaderboard, REFRESH_INTERVAL);
 </script>
 
 </body>
 </html>
-
