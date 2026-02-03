@@ -13,13 +13,27 @@
     overflow: hidden;
   }
 
+  /* Company Logo */
+  .company-logo {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    width: 120px;
+    z-index: 10;
+  }
+
+  .company-logo img {
+    width: 100%;
+    height: auto;
+  }
+
   .container {
     display: flex;
     height: 100vh;
   }
 
   .sidebar {
-    width: 180px;
+    width: 200px;
     background: linear-gradient(180deg, #ff7a18, #0e2a57);
     display: flex;
     align-items: center;
@@ -36,7 +50,7 @@
 
   .board {
     flex: 1;
-    padding: 40px;
+    padding: 80px 40px 40px;
     display: flex;
     flex-direction: column;
   }
@@ -85,9 +99,14 @@
 
 <body>
 
+<!-- Company Logo -->
+<div class="company-logo">
+  <img src="logos/Company.jpg" alt="Company Logo">
+</div>
+
 <div class="container">
   <div class="sidebar">
-    <div class="text"><h1>LEADERBOARD</h1></div>
+    <div class="text"><h2>LEADERBOARD</h2></div>
     <div class="text">Monthly Ranking</div>
   </div>
 
@@ -96,8 +115,8 @@
 
 <script>
   /************** CONFIG **************/
-  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";   // 🔴 PASTE YOUR SHEET ID
-  const SHEET_NAME = "LEADERBOARD";        // 🔴 EXACT TAB NAME
+  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";   // 🔴 Replace with your Sheet ID
+  const SHEET_NAME = "LEADERBOARD";        // 🔴 Must match tab name exactly
   const REFRESH_INTERVAL = 30000;     // 30 seconds
   /**********************************/
 
@@ -143,9 +162,14 @@
 
       const teamDiv = row.querySelector(".team");
       teamDiv.style.background = team.color;
+
       row.querySelector(".name").textContent = team.name;
-      row.querySelector(".lives").textContent = team.lives + " LIVES IMPACTED";
-      row.querySelector("img").src = team.logo;
+      row.querySelector(".lives").textContent =
+        team.lives + " LIVES IMPACTED";
+
+      const img = row.querySelector("img");
+      img.src = team.logo;
+      img.onerror = () => img.src = "logos/default.png";
     });
   }
 
@@ -155,18 +179,16 @@
       data.sort((a, b) => b.lives - a.lives);
       render(data);
     } catch (err) {
-      console.error("Failed to update leaderboard", err);
+      console.error("Leaderboard update failed", err);
     }
   }
 
   // Initial load
   updateLeaderboard();
 
-  // Auto-refresh every 30 seconds (NO PAGE RELOAD)
+  // Auto refresh every 30 seconds (NO PAGE RELOAD)
   setInterval(updateLeaderboard, REFRESH_INTERVAL);
 </script>
 
 </body>
 </html>
-
-
