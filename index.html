@@ -31,7 +31,6 @@
     font-size: 32px;
     font-weight: bold;
     letter-spacing: 2px;
-    text-align: center;
   }
 
   .board {
@@ -40,28 +39,43 @@
   }
 
   .row {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
+    transition: transform 0.6s ease;
   }
 
   .team {
-    padding: 16px 26px;
-    border-radius: 40px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 18px;
+    padding: 14px 22px;
+    border-radius: 40px;
     font-size: 18px;
     font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.4s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
   }
 
-  .team:hover {
-    transform: scale(1.02);
+  .logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #fff;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .name {
+    flex: 1;
   }
 
   .lives {
     font-size: 16px;
-    opacity: 0.95;
+    white-space: nowrap;
   }
 </style>
 </head>
@@ -70,65 +84,79 @@
 
 <div class="container">
   <div class="sidebar">
-    <div class="text">
-      LEADERBOARD<br><span style="font-size:14px;">MONTHLY RANKING</span>
-    </div>
+    <div class="text">LEADERBOARD</div>
   </div>
 
   <div class="board" id="leaderboard"></div>
 </div>
 
 <script>
-  // 🔴 REPLACE WITH YOUR GOOGLE SHEET ID
-  const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";
-  const SHEET_NAME = "LEADERBOARD";
+  const SHEET_ID = "YOUR_SHEET_ID";
+  const SHEET_NAME = "Sheet1";
+  const REFRESH_INTERVAL = 15000; // 15 seconds
 
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
-  fetch(URL)
-    .then(res => res.text())
-    .then(data => {
-      const json = JSON.parse(data.substring(47).slice(0, -2));
-      const rows = json.table.rows;
+  let currentData = [];
 
-      const teams = rows.map(row => ({
-        name: row.c[0].v,
-        lives: row.c[1].v,
-        color: row.c[2].v
-      }));
+  async function fetchData() {
+    const res = await fetch(URL);
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
 
-      // Sort descending (higher lives = higher rank)
-      teams.sort((a, b) => b.lives - a.lives);
+    const rows = json.table.rows;
 
-      renderLeaderboard(teams);
-    })
-    .catch(err => {
-      document.getElementById("leaderboard").innerHTML =
-        "<p>Error loading data</p>";
-      console.error(err);
-    });
+    return rows.map(r => ({
+      name: r.c[0]?.v || "",
+      lives: r.c[1]?.v || 0,
+      color: r.c[2]?.v || "#888",
+      logo: r.c[3]?.v || ""
+    }));
+  }
 
-  function renderLeaderboard(teams) {
+  function render(data) {
     const board = document.getElementById("leaderboard");
-    board.innerHTML = "";
 
-    teams.forEach(team => {
-      const row = document.createElement("div");
-      row.className = "row";
+    data.forEach((team, index) => {
+      let row = document.getElementById(team.name);
 
-      row.innerHTML = `
-        <div class="team" style="background:${team.color}">
-          <span>${team.name}</span>
-          <span class="lives">${team.lives} LIVES IMPACTED</span>
-        </div>
-      `;
+      if (!row) {
+        row = document.createElement("div");
+        row.className = "row";
+        row.id = team.name;
 
-      board.appendChild(row);
+        row.innerHTML = `
+          <div class="team">
+            <div class="logo"><img src="${team.logo}"></div>
+            <div class="name"></div>
+            <div class="lives"></div>
+          </div>
+        `;
+
+        board.appendChild(row);
+      }
+
+      row.style.order = index;
+
+      const teamDiv = row.querySelector(".team");
+      teamDiv.style.background = team.color;
+      row.querySelector(".name").textContent = team.name;
+      row.querySelector(".lives").textContent = team.lives + " LIVES IMPACTED";
     });
   }
 
-  // 🔁 Auto refresh every 30 seconds (optional)
-  setInterval(() => location.reload(), 30000);
+  async function updateLeaderboard() {
+    const data = await fetchData();
+    data.sort((a, b) => b.lives - a.lives);
+    currentData = data;
+    render(currentData);
+  }
+
+  // Initial load
+  updateLeaderboard();
+
+  // Live refresh (no reload)
+  setInterval(updateLeaderboard, REFRESH_INTERVAL);
 </script>
 
 </body>
