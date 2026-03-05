@@ -11,7 +11,7 @@
     margin: 0;
     padding: 0;
     font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-    background: #0e1a3a; /* Your Background Blue */
+    background: #0e1a3a; /* Background Blue */
     color: #fff;
     overflow: hidden;
     height: 100vh;
@@ -21,11 +21,11 @@
   /* Company Logo Positioning */
   .company-logo {
     position: absolute;
-    top: 2.5vh;
-    right: 2.5vw;
+    top: 2vh;
+    right: 2vw;
     width: 12vw;
-    max-width: 200px;
-    z-index: 10;
+    max-width: 180px;
+    z-index: 20; /* High z-index to stay on top */
   }
 
   .company-logo img {
@@ -43,14 +43,12 @@
   .sidebar {
     width: 10%;
     min-width: 110px;
-    /* This creates the blend from Orange to the Background Blue (#0e1a3a) */
     background: linear-gradient(180deg, #ff7a18 0%, #0e1a3a 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 15px 0 35px rgba(0,0,0,0.6);
     z-index: 5;
-    border-right: 1px solid rgba(255,255,255,0.05);
   }
 
   .sidebar h2 {
@@ -69,7 +67,8 @@
   .board {
     flex: 1;
     height: 100vh;
-    padding: 8vh 4vw 4vh; /* Large top padding to clear the logo */
+    /* Increased top padding (12vh) to prevent merging with company logo */
+    padding: 12vh 4vw 4vh; 
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
@@ -90,21 +89,22 @@
     width: 100%;
     gap: 1.5vw;
     padding: 0 2.5vw;
-    border-radius: 100px; /* Fully rounded pill */
+    border-radius: 100px; 
     font-weight: bold;
     box-shadow: 0 10px 25px rgba(0,0,0,0.45);
     border: 1px solid rgba(255,255,255,0.1);
   }
 
+  /* White lining removed from logo container */
   .logo {
-    width: 4vw;
-    height: 4vw;
-    max-width: 70px;
-    max-height: 70px;
+    width: 4.2vw;
+    height: 4.2vw;
+    max-width: 75px;
+    max-height: 75px;
     border-radius: 50%;
-    background: #fff;
+    background: transparent; /* Removed white background */
     flex-shrink: 0;
-    border: 3px solid rgba(255,255,255,0.7);
+    border: none; /* Removed white border */
     overflow: hidden;
   }
 
@@ -112,6 +112,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 50%;
   }
 
   .details { flex: 1; overflow: hidden; }
@@ -126,7 +127,6 @@
     font-size: 1.2vw;
     opacity: 0.9;
     font-weight: 400;
-    letter-spacing: 0.5px;
   }
 
   .percent {
@@ -141,8 +141,8 @@
 
   /* 1st Place Polish */
   .row[style*="order: 0"] .team {
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    transform: scale(1.03);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    transform: scale(1.02);
     z-index: 10;
   }
 </style>
@@ -161,11 +161,9 @@
 </div>
 
 <script>
-  /************** CONFIG **************/
   const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";
   const SHEET_NAME = "LEADERBOARD";
-  const REFRESH_INTERVAL = 15000; // 15 Seconds
-  /**********************************/
+  const REFRESH_INTERVAL = 15000;
 
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
@@ -182,16 +180,11 @@
         color: r.c[3]?.v || "#444",
         logo: r.c[4]?.v || ""
       }));
-    } catch (e) { 
-      console.error("Data fetch failed", e);
-      return []; 
-    }
+    } catch (e) { return []; }
   }
 
   function updateDisplay(data) {
     const board = document.getElementById("leaderboard");
-    
-    // Always rank by achievement percentage
     data.sort((a, b) => b.percent - a.percent);
 
     data.forEach((team, index) => {
@@ -214,11 +207,8 @@
         board.appendChild(row);
       }
 
-      // Smooth position change
       row.style.order = index;
-      
       const teamDiv = row.querySelector(".team");
-      // Team Bar Gradient (Color from Sheet to dark fade)
       teamDiv.style.background = `linear-gradient(90deg, ${team.color} 0%, rgba(0,0,0,0.6) 100%), ${team.color}`;
       
       row.querySelector(".name").textContent = team.name;
