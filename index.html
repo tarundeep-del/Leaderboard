@@ -2,23 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Leaderboard</title>
+<title>Leaderboard Display</title>
 
 <style>
   body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Arial, sans-serif;
     background: #1b3067;
     color: #fff;
     overflow: hidden;
+    height: 100vh;
   }
 
   /* Company Logo */
   .company-logo {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 120px;
+    top: 20px;
+    right: 20px;
+    width: 140px;
     z-index: 10;
   }
 
@@ -31,52 +32,59 @@
     height: 100vh;
   }
 
+  /* Sidebar Fix: Centered vertical text */
   .sidebar {
-    width: 200px;
+    width: 150px;
     background: linear-gradient(180deg, #ff7a18, #0e2a57);
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
+    box-shadow: 5px 0 15px rgba(0,0,0,0.3);
   }
 
-  .sidebar .text {
+  .sidebar .text h2 {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
-    font-size: 28px;
+    font-size: 40px;
     font-weight: bold;
-    letter-spacing: 2px;
+    letter-spacing: 6px;
+    margin: 0;
+    text-transform: uppercase;
   }
 
+  /* Board Fix: Centering and spacing for TV */
   .board {
     flex: 1;
-    padding: 80px 40px 40px;
+    padding: 60px 40px;
     display: flex;
     flex-direction: column;
+    justify-content: center; /* Keeps rows centered vertically if list is short */
+    gap: 15px; /* Space between bars */
   }
 
   .row {
-    margin-bottom: 18px;
+    transition: all 0.8s ease-in-out;
   }
 
   .team {
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 14px 22px;
-    border-radius: 40px;
+    gap: 20px;
+    padding: 18px 30px;
+    border-radius: 60px;
     font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-    transition: all 0.6s ease;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
   }
 
   .logo {
-    width: 46px;
-    height: 46px;
+    width: 55px;
+    height: 55px;
     border-radius: 50%;
     background: #fff;
     overflow: hidden;
     flex-shrink: 0;
+    border: 2px solid #fff;
   }
 
   .logo img {
@@ -90,36 +98,39 @@
   }
 
   .name {
-    font-size: 18px;
+    font-size: 24px;
+    text-transform: uppercase;
   }
 
   .stats {
-    font-size: 14px;
+    font-size: 16px;
     opacity: 0.9;
+    font-weight: normal;
   }
 
   .percent {
-    font-size: 18px;
+    font-size: 22px;
     white-space: nowrap;
+    background: rgba(0,0,0,0.2);
+    padding: 10px 25px;
+    border-radius: 30px;
   }
 </style>
 </head>
 
 <body>
 
-<!-- Company Logo -->
 <div class="company-logo">
   <img src="logos/Company.jpg" alt="Company Logo">
 </div>
 
 <div class="container">
   <div class="sidebar">
-    <div class="text"><H2>LEADERBOARD</H2></div>
-    
+    <div class="text"><h2>LEADERBOARD</h2></div>
   </div>
- 
 
-  <div class="board" id="leaderboard"></div>
+  <div class="board" id="leaderboard">
+    </div>
 </div>
 
 <script>
@@ -132,32 +143,38 @@
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
   async function fetchData() {
-    const res = await fetch(URL);
-    const text = await res.text();
-    const json = JSON.parse(text.substring(47).slice(0, -2));
+    try {
+      const res = await fetch(URL);
+      const text = await res.text();
+      const json = JSON.parse(text.substring(47).slice(0, -2));
 
-    return json.table.rows.map(r => {
-      const total = r.c[1]?.v || 0;
-      const target = r.c[2]?.v || 0;
-      const percent = target ? Math.round((total / target) * 100) : 0;
+      return json.table.rows.map(r => {
+        const total = r.c[1]?.v || 0;
+        const target = r.c[2]?.v || 0;
+        const percent = target ? Math.round((total / target) * 100) : 0;
 
-      return {
-        name: r.c[0]?.v || "",
-        total,
-        percent,
-        color: r.c[3]?.v || "#888",
-        logo: r.c[4]?.v || ""
-      };
-    });
+        return {
+          name: r.c[0]?.v || "",
+          total: total,
+          percent: percent,
+          color: r.c[3]?.v || "#888",
+          logo: r.c[4]?.v || ""
+        };
+      });
+    } catch (e) {
+      console.error("Fetch error", e);
+      return [];
+    }
   }
 
   function render(data) {
     const board = document.getElementById("leaderboard");
 
     data.forEach((team, index) => {
-      const safeId = team.name.replace(/\s+/g, "_");
+      const safeId = "row-" + team.name.replace(/\s+/g, "_");
       let row = document.getElementById(safeId);
 
+      // Create row if it doesn't exist
       if (!row) {
         row = document.createElement("div");
         row.className = "row";
@@ -165,7 +182,7 @@
 
         row.innerHTML = `
           <div class="team">
-            <div class="logo"><img></div>
+            <div class="logo"><img src="" alt=""></div>
             <div class="details">
               <div class="name"></div>
               <div class="stats"></div>
@@ -173,45 +190,41 @@
             <div class="percent"></div>
           </div>
         `;
-
         board.appendChild(row);
       }
 
+      // Update position (order)
       row.style.order = index;
 
+      // Update appearance
       const teamDiv = row.querySelector(".team");
       teamDiv.style.background = team.color;
 
       row.querySelector(".name").textContent = team.name;
-      row.querySelector(".stats").textContent =
-        `${team.total} Punched Revenue`;
-
-      row.querySelector(".percent").textContent =
-        `${team.percent}% Achieved`;
+      row.querySelector(".stats").textContent = `${team.total.toLocaleString()} Punched Revenue`;
+      row.querySelector(".percent").textContent = `${team.percent}% Achieved`;
 
       const img = row.querySelector("img");
-      img.src = team.logo;
-      img.onerror = () => img.src = "logos/default.png";
+      if (img.src !== team.logo) {
+        img.src = team.logo;
+        img.onerror = () => img.src = "logos/default.png";
+      }
     });
   }
 
   async function updateLeaderboard() {
-    try {
-      const data = await fetchData();
-      data.sort((a, b) => b.percent - a.percent); // Rank by achievement %
+    const data = await fetchData();
+    if (data.length > 0) {
+      // Rank by achievement % descending
+      data.sort((a, b) => b.percent - a.percent);
       render(data);
-    } catch (err) {
-      console.error("Leaderboard update failed", err);
     }
   }
 
+  // Initial call and set interval
   updateLeaderboard();
   setInterval(updateLeaderboard, REFRESH_INTERVAL);
 </script>
 
 </body>
 </html>
-
-
-
-
