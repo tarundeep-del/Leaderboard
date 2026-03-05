@@ -2,29 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Leaderboard Display</title>
-
+<title>Pro Leaderboard</title>
 <style>
   body {
     margin: 0;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #1b3067;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #0e1a3a; /* Deepened the blue for better TV contrast */
     color: #fff;
     overflow: hidden;
     height: 100vh;
-  }
-
-  /* Company Logo */
-  .company-logo {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 140px;
-    z-index: 10;
-  }
-
-  .company-logo img {
-    width: 100%;
   }
 
   .container {
@@ -32,48 +18,53 @@
     height: 100vh;
   }
 
-  /* Sidebar Fix: Centered vertical text */
+  /* SIDEBAR: Centered and Bold */
   .sidebar {
-    width: 150px;
-    background: linear-gradient(180deg, #ff7a18, #0e2a57);
+    width: 140px;
+    background: linear-gradient(180deg, #ff7a18, #af4c00);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+    box-shadow: 10px 0 20px rgba(0,0,0,0.4);
+    z-index: 5;
   }
 
-  .sidebar .text h2 {
+  .sidebar h2 {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
-    font-size: 40px;
-    font-weight: bold;
-    letter-spacing: 6px;
+    font-size: 50px;
+    letter-spacing: 10px;
     margin: 0;
     text-transform: uppercase;
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
   }
 
-  /* Board Fix: Centering and spacing for TV */
+  /* BOARD: Smooth Flex Layout */
   .board {
     flex: 1;
-    padding: 60px 40px;
+    padding: 50px;
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Keeps rows centered vertically if list is short */
-    gap: 15px; /* Space between bars */
+    gap: 15px;
+    perspective: 1000px; /* Adds depth for transitions */
   }
 
+  /* ROW: The secret to smoothness is 'order' and 'transition' */
   .row {
-    transition: all 0.8s ease-in-out;
+    display: flex;
+    transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); /* Slow, smooth movement */
+    width: 100%;
   }
 
   .team {
     display: flex;
     align-items: center;
+    width: 100%;
     gap: 20px;
-    padding: 18px 30px;
-    border-radius: 60px;
+    padding: 15px 30px;
+    border-radius: 100px; /* Pill shape looks better for movement */
     font-weight: bold;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.3);
     border: 1px solid rgba(255,255,255,0.1);
   }
 
@@ -82,63 +73,60 @@
     height: 55px;
     border-radius: 50%;
     background: #fff;
-    overflow: hidden;
+    padding: 2px;
     flex-shrink: 0;
-    border: 2px solid #fff;
   }
 
   .logo img {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
     object-fit: cover;
   }
 
-  .details {
-    flex: 1;
-  }
+  .details { flex: 1; }
 
   .name {
-    font-size: 24px;
-    text-transform: uppercase;
+    font-size: 26px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
   }
 
   .stats {
     font-size: 16px;
-    opacity: 0.9;
-    font-weight: normal;
+    opacity: 0.85;
+    font-weight: 400;
   }
 
   .percent {
-    font-size: 22px;
-    white-space: nowrap;
-    background: rgba(0,0,0,0.2);
-    padding: 10px 25px;
-    border-radius: 30px;
+    font-size: 26px;
+    background: rgba(0,0,0,0.25);
+    padding: 8px 25px;
+    border-radius: 50px;
+    min-width: 120px;
+    text-align: center;
+  }
+
+  /* Top 1 Highlight */
+  .row[style*="order: 0"] .team {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
   }
 </style>
 </head>
-
 <body>
-
-<div class="company-logo">
-  <img src="logos/Company.jpg" alt="Company Logo">
-</div>
 
 <div class="container">
   <div class="sidebar">
-    <div class="text"><h2>LEADERBOARD</h2></div>
+    <h2>LEADERBOARD</h2>
   </div>
-
-  <div class="board" id="leaderboard">
-    </div>
+  <div class="board" id="leaderboard"></div>
 </div>
 
 <script>
-  /************** CONFIG **************/
   const SHEET_ID = "1C5pIirqDizlytoBk4PqOWZuFpvvOg30ehdhF7lgjKyU";
   const SHEET_NAME = "LEADERBOARD";
-  const REFRESH_INTERVAL = 30000; // 30 sec
-  /**********************************/
+  const REFRESH_INTERVAL = 15000; // Increased to 15s for snappier updates
 
   const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${SHEET_NAME}`;
 
@@ -147,39 +135,31 @@
       const res = await fetch(URL);
       const text = await res.text();
       const json = JSON.parse(text.substring(47).slice(0, -2));
-
-      return json.table.rows.map(r => {
-        const total = r.c[1]?.v || 0;
-        const target = r.c[2]?.v || 0;
-        const percent = target ? Math.round((total / target) * 100) : 0;
-
-        return {
-          name: r.c[0]?.v || "",
-          total: total,
-          percent: percent,
-          color: r.c[3]?.v || "#888",
-          logo: r.c[4]?.v || ""
-        };
-      });
-    } catch (e) {
-      console.error("Fetch error", e);
-      return [];
-    }
+      return json.table.rows.map(r => ({
+        name: r.c[0]?.v || "Unknown",
+        total: r.c[1]?.v || 0,
+        target: r.c[2]?.v || 0,
+        percent: r.c[2]?.v ? Math.round((r.c[1]?.v / r.c[2]?.v) * 100) : 0,
+        color: r.c[3]?.v || "#444",
+        logo: r.c[4]?.v || ""
+      }));
+    } catch (e) { return []; }
   }
 
-  function render(data) {
+  function updateDisplay(data) {
     const board = document.getElementById("leaderboard");
+    
+    // Sort data by percentage
+    data.sort((a, b) => b.percent - a.percent);
 
     data.forEach((team, index) => {
-      const safeId = "row-" + team.name.replace(/\s+/g, "_");
+      const safeId = "t-" + team.name.replace(/[^a-z0-9]/gi, '');
       let row = document.getElementById(safeId);
 
-      // Create row if it doesn't exist
       if (!row) {
         row = document.createElement("div");
         row.className = "row";
         row.id = safeId;
-
         row.innerHTML = `
           <div class="team">
             <div class="logo"><img src="" alt=""></div>
@@ -188,43 +168,35 @@
               <div class="stats"></div>
             </div>
             <div class="percent"></div>
-          </div>
-        `;
+          </div>`;
         board.appendChild(row);
       }
 
-      // Update position (order)
+      // Smooth Position Update
       row.style.order = index;
 
-      // Update appearance
+      // Smooth Content Update
       const teamDiv = row.querySelector(".team");
-      teamDiv.style.background = team.color;
-
+      teamDiv.style.backgroundColor = team.color;
+      
       row.querySelector(".name").textContent = team.name;
       row.querySelector(".stats").textContent = `${team.total.toLocaleString()} Punched Revenue`;
-      row.querySelector(".percent").textContent = `${team.percent}% Achieved`;
-
+      row.querySelector(".percent").textContent = `${team.percent}%`;
+      
       const img = row.querySelector("img");
-      if (img.src !== team.logo) {
+      if(team.logo && img.src !== team.logo) {
         img.src = team.logo;
-        img.onerror = () => img.src = "logos/default.png";
       }
     });
   }
 
-  async function updateLeaderboard() {
+  async function start() {
     const data = await fetchData();
-    if (data.length > 0) {
-      // Rank by achievement % descending
-      data.sort((a, b) => b.percent - a.percent);
-      render(data);
-    }
+    if (data.length > 0) updateDisplay(data);
   }
 
-  // Initial call and set interval
-  updateLeaderboard();
-  setInterval(updateLeaderboard, REFRESH_INTERVAL);
+  start();
+  setInterval(start, REFRESH_INTERVAL);
 </script>
-
 </body>
 </html>
